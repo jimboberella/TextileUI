@@ -1,4 +1,4 @@
-# Fabric Web
+# TextileUI
 
 A modern web interface for the [Fabric](https://github.com/danielmiessler/fabric) tool, providing a polished desktop experience for running AI patterns, managing presets, and exporting results.
 
