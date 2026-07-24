@@ -64,6 +64,8 @@ def run_fabric(pattern, input_text, variables=None, **kwargs):
         cmd.extend(["-g", kwargs["language"]])
     if kwargs.get("attachment"):
         cmd.extend(["-a", kwargs["attachment"]])
+    if kwargs.get("model_context_length"):
+        cmd.extend(["--modelContextLength", str(kwargs["model_context_length"])])
 
     result = subprocess.run(
         cmd, input=input_text if input_text else None,
@@ -173,6 +175,7 @@ def run_pattern():
     youtube = data.get("youtube")
     language = data.get("language")
     attachment = data.get("attachment")
+    model_context_length = data.get("model_context_length")
 
     if output_file:
         output_file = resolve_path(output_file)
@@ -195,6 +198,7 @@ def run_pattern():
         youtube=youtube,
         language=language,
         attachment=attachment,
+        model_context_length=model_context_length,
     )
 
     return jsonify(result)

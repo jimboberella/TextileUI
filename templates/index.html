@@ -32,7 +32,7 @@
   }
   .layout {
     display: grid;
-    grid-template-columns: 260px 1fr 420px;
+    grid-template-columns: 360px 1fr 420px;
     height: 100vh;
   }
 
@@ -109,58 +109,78 @@
   .pattern-list {
     flex: 1;
     overflow-y: auto;
-    padding: 6px 0;
+    padding: 10px;
   }
-  .pattern-item {
-    padding: 8px 16px;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 400;
-    border-left: 3px solid transparent;
-    transition: background 0.12s ease, border-color 0.12s ease;
+  .pattern-card {
     display: flex;
-    align-items: flex-start;
-    gap: 8px;
-  }
-  .pattern-item:hover {
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
     background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
   }
-  .pattern-item.active {
-    background: color-mix(in srgb, var(--accent) 12%, transparent);
-    border-left-color: var(--accent);
+  .pattern-card:hover {
+    border-color: color-mix(in srgb, var(--accent) 50%, transparent);
+    background: color-mix(in srgb, var(--accent) 6%, var(--bg3));
+  }
+  .pattern-card.active {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg3));
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+  .pattern-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .pattern-card-name {
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--text);
+  }
+  .pattern-card.active .pattern-card-name {
     color: var(--accent);
   }
-  .pattern-item-text {
-    flex: 1;
-    min-width: 0;
-  }
-  .pattern-name {
-    font-size: 13px;
-    font-weight: 500;
-    line-height: 1.4;
-  }
-  .pattern-desc {
-    font-size: 12px;
+  .pattern-card-desc {
+    font-size: 11.5px;
     color: var(--text2);
-    margin-top: 2px;
+    line-height: 1.45;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    line-height: 1.45;
   }
-  .pattern-item-fav {
+  .pattern-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .pattern-card-tag {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+  }
+  .pattern-card-fav {
     cursor: pointer;
     color: var(--text2);
     flex-shrink: 0;
-    padding-top: 2px;
+    padding: 2px;
     opacity: 0.5;
     transition: opacity 0.15s ease, color 0.15s ease;
     display: flex;
     align-items: center;
   }
-  .pattern-item-fav:hover { opacity: 1; color: var(--orange); }
-  .pattern-item-fav.favorited { color: var(--orange); opacity: 1; }
+  .pattern-card-fav:hover { opacity: 1; color: var(--orange); }
+  .pattern-card-fav.favorited { color: var(--orange); opacity: 1; }
   .sidebar-footer {
     padding: 12px 16px;
     border-top: 1px solid var(--border);
@@ -694,6 +714,7 @@
       <div class="input-row">
         <label>Temp: <input type="number" id="opt-temp" value="0.7" step="0.1" min="0" max="2" style="width:60px; background:var(--bg2); border:1px solid var(--border); border-radius:6px; padding:4px 8px; color:var(--text); font-size:13px; font-family: 'Inter', sans-serif; outline:none;"></label>
         <label>TopP: <input type="number" id="opt-topp" value="0.9" step="0.05" min="0" max="1" style="width:60px; background:var(--bg2); border:1px solid var(--border); border-radius:6px; padding:4px 8px; color:var(--text); font-size:13px; font-family: 'Inter', sans-serif; outline:none;"></label>
+        <label>Ctx: <input type="number" id="opt-ctxlen" placeholder="Auto" min="512" step="256" style="width:80px; background:var(--bg2); border:1px solid var(--border); border-radius:6px; padding:4px 8px; color:var(--text); font-size:13px; font-family: 'Inter', sans-serif; outline:none;"></label>
       </div>
 
       <div class="preset-load-bar" id="preset-load-bar" style="display:none;">
@@ -902,20 +923,24 @@ function renderPatterns(patterns) {
   const starEmpty = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
 
   filtered.forEach(name => {
-    const div = document.createElement('div');
-    div.className = 'pattern-item';
-    div.dataset.name = name;
+    const card = document.createElement('div');
+    card.className = 'pattern-card';
+    card.dataset.name = name;
     const isFav = favorites.includes(name);
-    const summary = patternDetails[name]?.summary || '';
-    div.innerHTML = `<div class="pattern-item-text">
-        <div class="pattern-name">${escapeHtml(name)}</div>
-        ${summary ? '<div class="pattern-desc">' + escapeHtml(summary) + '</div>' : '<div class="pattern-desc" style="font-style:italic;">loading...</div>'}
+    const detail = patternDetails[name] || {};
+    const summary = detail.summary || '';
+    const variables = detail.variables || [];
+    const tagHtml = variables.slice(0, 3).map(v => '<span class="pattern-card-tag">' + escapeHtml(v) + '</span>').join('');
+    card.innerHTML = `<div class="pattern-card-header">
+        <span class="pattern-card-name">${escapeHtml(name)}</span>
+        <span class="pattern-card-fav ${isFav ? 'favorited' : ''}" data-name="${escapeHtml(name)}" onclick="event.stopPropagation(); toggleFavorite('${escapeHtml(name)}', this)">
+          ${isFav ? starFilled : starEmpty}
+        </span>
       </div>
-      <span class="pattern-item-fav ${isFav ? 'favorited' : ''}" data-name="${escapeHtml(name)}" onclick="event.stopPropagation(); toggleFavorite('${escapeHtml(name)}', this)">
-        ${isFav ? starFilled : starEmpty}
-      </span>`;
-    div.addEventListener('click', () => selectPattern(name, div));
-    container.appendChild(div);
+      ${summary ? '<div class="pattern-card-desc">' + escapeHtml(summary) + '</div>' : '<div class="pattern-card-desc" style="font-style:italic;">loading...</div>'}
+      ${tagHtml ? '<div class="pattern-card-tags">' + tagHtml + '</div>' : ''}`;
+    card.addEventListener('click', () => selectPattern(name, card));
+    container.appendChild(card);
   });
 }
 
@@ -924,7 +949,7 @@ function filterPatterns(query) {
 }
 
 async function selectPattern(name, el) {
-  document.querySelectorAll('.pattern-item').forEach(e => e.classList.remove('active'));
+  document.querySelectorAll('.pattern-card').forEach(e => e.classList.remove('active'));
   el.classList.add('active');
   selectedPattern = name;
 
@@ -1072,7 +1097,7 @@ function applyPreset(preset) {
   document.getElementById('language-input').value = preset.language || '';
 
   if (preset.pattern) {
-    const items = document.querySelectorAll('.pattern-item');
+    const items = document.querySelectorAll('.pattern-card');
     items.forEach(item => {
       if (item.dataset.name === preset.pattern) {
         selectPattern(preset.pattern, item);
@@ -1213,6 +1238,7 @@ async function runPattern() {
     context: document.getElementById('context-select').value,
     temperature: parseFloat(document.getElementById('opt-temp').value),
     topp: parseFloat(document.getElementById('opt-topp').value),
+    model_context_length: document.getElementById('opt-ctxlen').value ? parseInt(document.getElementById('opt-ctxlen').value) : null,
     stream: document.getElementById('opt-stream').checked,
     raw: document.getElementById('opt-raw').checked,
     dry_run: document.getElementById('opt-dry-run').checked,
@@ -1231,7 +1257,32 @@ async function runPattern() {
     });
     const data = await res.json();
 
-    if (data.stderr && !data.stdout) {
+    const fullOutput = (data.stdout || '') + (data.stderr || '');
+
+    // Detect context length exceeded errors
+    const ctxErrors = [
+      'maximum context length',
+      'context_length_exceeded',
+      'too many input tokens',
+      'input is too long',
+      'exceeds token limit',
+      'maximum context size',
+      'context size exceeded',
+      'maximum context length exceeded',
+    ];
+    const isCtxError = ctxErrors.some(e => fullOutput.toLowerCase().includes(e));
+
+    if (isCtxError) {
+      const modelSel = document.getElementById('model-select');
+      const modelName = modelSel.value || '(auto)';
+      const inputLen = inputText.length;
+      document.getElementById('output-area').innerHTML =
+        '<div style="color:var(--orange);font-weight:600;margin-bottom:8px;">⚠ Context size exceeded</div>' +
+        '<pre style="color:var(--text2);margin-bottom:12px;">The combined pattern + input text exceeds the model "' + escapeHtml(modelName) + '" context window.</pre>' +
+        '<pre style="color:var(--text2);margin-bottom:12px;">Your input is ' + inputLen.toLocaleString() + ' characters. Try splitting it into smaller chunks or using a model with a larger context window.</pre>' +
+        '<pre style="color:var(--red);white-space:pre-wrap;">' + escapeHtml(fullOutput.trim()) + '</pre>';
+      setStatus('Context size exceeded', 'error');
+    } else if (data.stderr && !data.stdout) {
       document.getElementById('output-area').innerHTML =
         '<pre style="color:var(--red);">' + escapeHtml(data.stderr) + '</pre>';
       setStatus('Error (exit ' + data.returncode + ')', 'stderr');
@@ -1242,6 +1293,14 @@ async function runPattern() {
       if (data.returncode !== 0) {
         document.getElementById('error-text').textContent = 'Exit code: ' + data.returncode;
       }
+    }
+
+    // Persist context size for next run
+    var ctxVal = document.getElementById('opt-ctxlen').value.trim();
+    if (ctxVal) {
+      localStorage.setItem('fabric_ctxlen', ctxVal);
+    } else {
+      localStorage.removeItem('fabric_ctxlen');
     }
   } catch(e) {
     document.getElementById('output-area').innerHTML =
@@ -1384,6 +1443,14 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
 });
 
 // Init
+(function() {
+  // Restore last-used context size
+  var savedCtx = localStorage.getItem('fabric_ctxlen');
+  if (savedCtx) {
+    document.getElementById('opt-ctxlen').value = savedCtx;
+  }
+})();
+
 loadPatterns();
 loadSelects();
 loadPresets();
