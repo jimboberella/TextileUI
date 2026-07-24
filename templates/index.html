@@ -1449,6 +1449,31 @@ document.querySelectorAll('.modal-overlay').forEach(overlay => {
   if (savedCtx) {
     document.getElementById('opt-ctxlen').value = savedCtx;
   }
+  
+  // Keepalive connection - shuts down server when browser closes
+  var connId = 'client_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+  var keepaliveEventSource = null;
+  function startKeepalive() {
+    try {
+      if (keepaliveEventSource) { keepaliveEventSource.close(); }
+      keepaliveEventSource = new EventSource('/api/keepalive?id=' + connId);
+    } catch(e) {
+      console.warn('Keepalive not available:', e.message);
+    }
+  }
+  startKeepalive();
+  
+  // Reconnect on visibility change (browser may throttle hidden tabs)
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'visible') {
+      startKeepalive();
+    }
+  });
+  
+  // Close on page unload
+  window.addEventListener('beforeunload', function() {
+    if (keepaliveEventSource) { keepaliveEventSource.close(); }
+  });
 })();
 
 loadPatterns();

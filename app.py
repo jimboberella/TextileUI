@@ -1,11 +1,55 @@
 import json
 import os
+import signal
 import subprocess
+import threading
 import time
 from pathlib import Path
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response
 
 app = Flask(__name__)
+
+# Keepalive tracking
+_active_connections = {}
+_shutdown_event = threading.Event()
+_server = None
+
+
+def _connection_timer(conn_id):
+    """Reset timer on each ping; shut down when no active connections."""
+    timer = threading.Timer(15.0, _check_shutdown)
+    timer.start()
+    with _active_connections_lock:
+        _active_connections[conn_id] = timer
+
+
+def _check_shutdown():
+    """Called when last connection drops. Wait a moment, then shut down."""
+    time.sleep(3)  # grace period
+    with _active_connections_lock:
+        if not _active_connections:
+            print("No active connections — shutting down server.")
+            if _server:
+                threading.Thread(target=_server.shutdown, daemon=True).start()
+
+
+def _keepalive_stream(conn_id):
+    """Send periodic pings; clean up on client disconnect."""
+    try:
+        interval = 3
+        while not _shutdown_event.is_set():
+            yield ": keepalive\n\n"
+            _connection_timer(conn_id)
+            time.sleep(interval)
+    finally:
+        with _active_connections_lock:
+            timer = _active_connections.pop(conn_id, None)
+        if timer:
+            timer.cancel()
+        _check_shutdown()
+
+
+_active_connections_lock = threading.Lock()
 
 CONFIG_PATH = Path(__file__).parent / "config" / "settings.json"
 FABRIC_CMD = ["fabric"]
@@ -407,10 +451,61 @@ def update_obsidian_config():
     data = request.json
     set_obsidian_config(data.get("vault_path", ""), data.get("folder", ""))
     return jsonify(get_obsidian_config())
+@app.route("/api/keepalive", methods=["GET"])
+def keepalive():
+    conn_id = request.args.get("id", "")
+    return Response(
+        _keepalive_stream(conn_id),
+        mimetype="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        }
+    )
+
+
 
 
 if __name__ == "__main__":
     config = load_config()
     port = 5050
     print(f"Fabric Web Interface running at http://localhost:{port}")
-    app.run(host="0.0.0.0", port=port, debug=True)
+    print("Server will auto-shutdown when all browser tabs are closed.")
+
+    # Open browser automatically
+    import platform
+    import webbrowser
+    url = f"http://localhost:{port}"
+    
+    # Try different methods depending on platform
+    try:
+        if platform.system() == "Darwin":  # macOS
+            import subprocess
+            subprocess.Popen(["open", url])
+        elif platform.system() == "Linux":
+            # Try desktop-notification-aware openers first
+            import subprocess
+            for cmd in ["xdg-open", "gnome-open", "x-www-browser", "firefox", "chromium"]:
+                try:
+                    subprocess.Popen([cmd, url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+                    break
+                except FileNotFoundError:
+                    continue
+            else:
+                # Fallback to generic open
+                webbrowser.open(url)
+        else:
+            webbrowser.open(url)
+    except Exception as e:
+        print(f"Note: Could not auto-open browser: {e}")
+        print(f"Please open: {url}")
+
+    from werkzeug.serving import make_server
+    _server = make_server("0.0.0.0", port, app, threaded=True)
+    try:
+        _server.serve_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        _shutdown_event.set()
+        _server.shutdown()
