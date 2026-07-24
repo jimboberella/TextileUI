@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fabric Interface</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0d1117;
+    --bg2: #161b22;
+    --bg3: #21262d;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text2: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --red: #f85149;
+    --orange: #d29922;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 14px;
+    letter-spacing: -0.01em;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: 260px 1fr 420px;
+    height: 100vh;
+  }
+
+  /* Sidebar */
+  .sidebar {
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .sidebar-header h2 {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sidebar-controls {
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    gap: 6px;
+  }
+  .sidebar-controls button {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+    flex: 1;
+    transition: all 0.15s ease;
+  }
+  .sidebar-controls button:hover {
+    background: var(--border);
+    color: var(--text);
+  }
+  .sidebar-controls button.active {
+    background: var(--orange);
+    border-color: var(--orange);
+    color: #fff;
+  }
+  .sidebar-search {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .sidebar-search input {
+    width: 100%;
+    padding: 7px 10px 7px 32px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+  .sidebar-search input:focus {
+    border-color: var(--accent);
+  }
+  .pattern-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px 0;
+  }
+  .pattern-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 400;
+    border-left: 3px solid transparent;
+    transition: background 0.12s ease, border-color 0.12s ease;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .pattern-item:hover {
+    background: var(--bg3);
+  }
+  .pattern-item.active {
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+    border-left-color: var(--accent);
+    color: var(--accent);
+  }
+  .pattern-item-text {
+    flex: 1;
+    min-width: 0;
+  }
+  .pattern-name {
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+  .pattern-desc {
+    font-size: 12px;
+    color: var(--text2);
+    margin-top: 2px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.45;
+  }
+  .pattern-item-fav {
+    cursor: pointer;
+    color: var(--text2);
+    flex-shrink: 0;
+    padding-top: 2px;
+    opacity: 0.5;
+    transition: opacity 0.15s ease, color 0.15s ease;
+    display: flex;
+    align-items: center;
+  }
+  .pattern-item-fav:hover { opacity: 1; color: var(--orange); }
+  .pattern-item-fav.favorited { color: var(--orange); opacity: 1; }
+  .sidebar-footer {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text2);
+    letter-spacing: 0.02em;
+  }
+  #refresh-patterns {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    padding: 4px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #refresh-patterns:hover {
+    background: var(--border);
+    color: var(--text);
+  }
+
+  /* Presets panel */
+  .presets-section {
+    border-bottom: 1px solid var(--border);
+    padding: 8px 16px;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .presets-section h4 {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .presets-section h4 button {
+    background: none;
+    border: none;
+    color: var(--accent);
+    cursor: pointer;
+    padding: 0 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.15s ease;
+  }
+  .presets-section h4 button:hover {
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+  }
+  .presets-section h4 button svg {
+    width: 14px;
+    height: 14px;
+  }
+  .preset-item {
+    padding: 6px 10px;
+    margin-bottom: 4px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 400;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 6px;
+    transition: border-color 0.15s ease;
+  }
+  .preset-item:hover { border-color: var(--accent); }
+  .preset-item-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .preset-item-pattern {
+    color: var(--text2);
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .preset-delete {
+    background: none;
+    border: none;
+    color: var(--text2);
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 3px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+  }
+  .preset-delete svg {
+    width: 12px;
+    height: 12px;
+  }
+  .preset-delete:hover { color: var(--red); background: rgba(248,81,73,0.1); }
+
+  /* Center panel */
+  .center {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .center-top {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    padding: 16px;
+  }
+  .input-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .input-tab {
+    padding: 6px 14px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+  }
+  .input-tab.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    font-weight: 600;
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+  .input-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+  .input-area textarea {
+    flex: 1;
+    min-height: 180px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    line-height: 1.55;
+    resize: none;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+  .input-area textarea:focus {
+    border-color: var(--accent);
+  }
+  .input-row {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .input-row input[type="text"], .input-row select {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 12px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+  .input-row input[type="text"]:focus, .input-row select:focus {
+    border-color: var(--accent);
+  }
+  .input-row select { min-width: 140px; }
+  .input-row label {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .input-row input[type="checkbox"] { accent-color: var(--accent); }
+  .preset-load-bar {
+    margin-top: 8px;
+    display: flex;
+    gap: 6px;
+  }
+  .preset-load-bar .btn {
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+  .center-bottom {
+    height: 140px;
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    overflow-y: auto;
+  }
+  .variables-section h4 {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text2);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .var-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+  .var-row input {
+    flex: 1;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+  .var-row input:focus { border-color: var(--accent); }
+
+  /* Right panel */
+  .right {
+    background: var(--bg2);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .right-header {
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .right-header h3 {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .save-buttons {
+    display: flex;
+    gap: 6px;
+  }
+  .btn {
+    padding: 6px 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'Inter', sans-serif;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+  }
+  .btn svg {
+    flex-shrink: 0;
+  }
+  .btn:hover {
+    background: var(--border);
+    color: var(--text);
+  }
+  .btn-accent {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+  }
+  .btn-accent:hover { opacity: 0.85; }
+  .btn-green {
+    background: var(--green);
+    border-color: var(--green);
+    color: #fff;
+  }
+  .btn-red {
+    background: var(--red);
+    border-color: var(--red);
+    color: #fff;
+  }
+  .output-area {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+  }
+  .output-area pre {
+    font-family: 'JetBrains Mono', "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 12.5px;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    word-break: break-word;
+    letter-spacing: -0.01em;
+  }
+  .output-placeholder {
+    color: var(--text2);
+    font-size: 13px;
+    font-weight: 400;
+    text-align: center;
+    margin-top: 60px;
+    letter-spacing: -0.01em;
+  }
+  .run-btn-wrap {
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+  }
+  .run-btn {
+    width: 100%;
+    padding: 11px 16px;
+    background: var(--accent);
+    border: none;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+    cursor: pointer;
+    letter-spacing: -0.01em;
+    transition: all 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .run-btn:hover { opacity: 0.85; }
+  .run-btn:disabled {
+    background: var(--bg3);
+    color: var(--text2);
+    cursor: not-allowed;
+  }
+  .status-bar {
+    padding: 8px 16px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text2);
+    display: flex;
+    justify-content: space-between;
+    letter-spacing: 0.01em;
+  }
+
+  /* Modals */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    width: 480px;
+    max-width: 90vw;
+  }
+  .modal h3 {
+    margin-bottom: 16px;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .modal label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+    display: block;
+    margin-bottom: 4px;
+    margin-top: 12px;
+    letter-spacing: 0.01em;
+  }
+  .modal input, .modal select {
+    width: 100%;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px 12px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'Inter', sans-serif;
+    outline: none;
+    transition: border-color 0.15s ease;
+  }
+  .modal input:focus, .modal select:focus { border-color: var(--accent); }
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 20px;
+    justify-content: flex-end;
+  }
+
+  .spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+    vertical-align: middle;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--bg3); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--border); }
+</style>
+</head>
+<body>
+<div class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-header">
+      <h2>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Patterns
+      </h2>
+      <button id="refresh-patterns" onclick="loadPatterns()" title="Refresh patterns">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+      </button>
+    </div>
+    <div class="sidebar-controls">
+      <button id="view-all-btn" class="active" onclick="setView('all')">All</button>
+      <button id="view-fav-btn" onclick="setView('favorites')">Favorites</button>
+    </div>
+    <div class="sidebar-search">
+      <input type="text" id="pattern-search" placeholder="Filter patterns..." oninput="filterPatterns(this.value)">
+    </div>
+    <div class="presets-section" id="presets-section" style="display:none;">
+      <h4>Presets <button onclick="showSavePresetModal()" title="Save current settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button></h4>
+      <div id="preset-list"></div>
+    </div>
+    <div class="pattern-list" id="pattern-list">
+      <div style="padding: 16px; color: var(--text2); font-size: 13px;">Loading patterns...</div>
+    </div>
+    <div class="sidebar-footer">
+      <span id="pattern-count">0 patterns</span>
+    </div>
+  </div>
+
+  <!-- Center -->
+  <div class="center">
+    <div class="center-top">
+      <div class="input-tabs">
+        <button class="input-tab active" data-tab="text">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -0.125em;margin-right:4px;"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          Text
+        </button>
+        <button class="input-tab" data-tab="file">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -0.125em;margin-right:4px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          File
+        </button>
+        <button class="input-tab" data-tab="url">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -0.125em;margin-right:4px;"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          URL
+        </button>
+        <button class="input-tab" data-tab="youtube">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -0.125em;margin-right:4px;"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19.1c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.43z"/><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"/></svg>
+          Video
+        </button>
+      </div>
+
+      <div class="input-area">
+        <div class="tab-content active" id="tab-text">
+          <textarea id="input-text" placeholder="Enter your text, notes, or content here..."></textarea>
+        </div>
+        <div class="tab-content" id="tab-file">
+          <input type="text" id="input-file" placeholder="Path to file (e.g., /home/james/notes/input.md)" style="width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:12px; color:var(--text); font-size:14px; font-family: 'Inter', sans-serif; outline:none; margin-top: 20px;">
+        </div>
+        <div class="tab-content" id="tab-url">
+          <input type="text" id="input-url" placeholder="https://example.com/article" style="width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:12px; color:var(--text); font-size:14px; font-family: 'Inter', sans-serif; outline:none; margin-top: 20px;">
+        </div>
+        <div class="tab-content" id="tab-youtube">
+          <input type="text" id="input-youtube" placeholder="https://youtube.com/watch?v=..." style="width:100%; background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:12px; color:var(--text); font-size:14px; font-family: 'Inter', sans-serif; outline:none; margin-top: 20px;">
+        </div>
+      </div>
+
+      <div class="input-row" style="margin-top:12px;">
+        <select id="model-select" title="Model"><option value="">Auto</option></select>
+        <select id="context-select" title="Context"><option value="">None</option></select>
+        <input type="text" id="language-input" placeholder="Language (e.g. en)" style="max-width:120px;">
+        <label><input type="checkbox" id="opt-stream"> Stream</label>
+        <label><input type="checkbox" id="opt-raw"> Raw</label>
+        <label><input type="checkbox" id="opt-dry-run"> Dry Run</label>
+      </div>
+      <div class="input-row">
+        <label>Temp: <input type="number" id="opt-temp" value="0.7" step="0.1" min="0" max="2" style="width:60px; background:var(--bg2); border:1px solid var(--border); border-radius:6px; padding:4px 8px; color:var(--text); font-size:13px; font-family: 'Inter', sans-serif; outline:none;"></label>
+        <label>TopP: <input type="number" id="opt-topp" value="0.9" step="0.05" min="0" max="1" style="width:60px; background:var(--bg2); border:1px solid var(--border); border-radius:6px; padding:4px 8px; color:var(--text); font-size:13px; font-family: 'Inter', sans-serif; outline:none;"></label>
+      </div>
+
+      <div class="preset-load-bar" id="preset-load-bar" style="display:none;">
+        <span style="font-size:11px; color:var(--text2); padding:4px 0; font-weight: 500;">Loaded from preset:</span>
+        <button class="btn" onclick="loadPresetSettings()" style="font-size:11px; padding:3px 8px;">Apply</button>
+        <button class="btn" onclick="clearPresetBanner()" style="font-size:11px; padding:3px 8px;">Clear</button>
+      </div>
+    </div>
+
+    <div class="center-bottom">
+      <div class="variables-section">
+        <h4>Pattern Variables</h4>
+        <div id="var-container"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right -->
+  <div class="right">
+    <div class="right-header">
+      <h3>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>
+        Output
+      </h3>
+      <div class="save-buttons">
+        <button class="btn" onclick="copyOutput()" title="Copy to clipboard">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -0.125em;margin-right:4px;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy
+        </button>
+        <button class="btn btn-accent" onclick="showSaveFileModal()" title="Save to file">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -0.125em;margin-right:4px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          File
+        </button>
+        <button class="btn btn-green" onclick="showSaveObsidianModal()" title="Save to Obsidian">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: -0.125em;margin-right:4px;"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Obsidian
+        </button>
+      </div>
+    </div>
+    <div class="output-area" id="output-area">
+      <div class="output-placeholder">Select a pattern and click Run to get started</div>
+    </div>
+    <div class="run-btn-wrap">
+      <button class="run-btn" id="run-btn" onclick="runPattern()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Run Pattern
+      </button>
+    </div>
+    <div class="status-bar">
+      <span id="status-text">Ready</span>
+      <span id="error-text"></span>
+    </div>
+  </div>
+</div>
+
+<!-- Save file modal -->
+<div class="modal-overlay" id="modal-save-file">
+  <div class="modal">
+    <h3>Save to File</h3>
+    <label>Output Directory</label>
+    <input type="text" id="save-file-dir" placeholder="/home/james/Documents/fabric-output">
+    <label>Filename</label>
+    <input type="text" id="save-file-name" placeholder="output.md">
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-save-file')">Cancel</button>
+      <button class="btn btn-accent" onclick="saveToFile()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Save to Obsidian modal -->
+<div class="modal-overlay" id="modal-save-obsidian">
+  <div class="modal">
+    <h3>Save to Obsidian</h3>
+    <label>Title</label>
+    <input type="text" id="obsidian-title" placeholder="Note title">
+    <label>Vault Path</label>
+    <input type="text" id="obsidian-vault" placeholder="~/Documents/Notes">
+    <label>Folder (optional, inside vault)</label>
+    <input type="text" id="obsidian-folder" placeholder="e.g., Daily/2026">
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-save-obsidian')">Cancel</button>
+      <button class="btn btn-green" onclick="saveToObsidian()">Save to Vault</button>
+    </div>
+  </div>
+</div>
+
+<!-- Save preset modal -->
+<div class="modal-overlay" id="modal-save-preset">
+  <div class="modal">
+    <h3>Save Preset</h3>
+    <label>Name</label>
+    <input type="text" id="preset-name" placeholder="My Preset">
+    <label>Pattern</label>
+    <input type="text" id="preset-pattern" placeholder="auto-suggest from selection">
+    <label>Model</label>
+    <input type="text" id="preset-model" placeholder="leave blank for auto">
+    <label>Temperature</label>
+    <input type="number" id="preset-temp" value="0.7" step="0.1">
+    <label>TopP</label>
+    <input type="number" id="preset-topp" value="0.9" step="0.05">
+    <label>Context</label>
+    <input type="text" id="preset-context" placeholder="leave blank">
+    <label>Language</label>
+    <input type="text" id="preset-language" placeholder="e.g. en">
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('modal-save-preset')">Cancel</button>
+      <button class="btn btn-accent" onclick="savePreset()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let selectedPattern = null;
+let patternDetails = {};
+let currentOutput = "";
+let favorites = [];
+let presets = [];
+let currentView = "all";
+let presetToEdit = null;
+let pendingPresetSettings = null;
+
+// Tab switching
+document.querySelectorAll('.input-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.input-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// View toggle (All / Favorites)
+function setView(view) {
+  currentView = view;
+  document.getElementById('view-all-btn').classList.toggle('active', view === 'all');
+  document.getElementById('view-fav-btn').classList.toggle('active', view === 'favorites');
+  document.getElementById('presets-section').style.display = view === 'all' ? 'block' : 'none';
+  renderPatterns(currentPatterns);
+}
+
+// Load patterns on startup
+async function loadPatterns() {
+  const btn = document.getElementById('refresh-patterns');
+  btn.innerHTML = '<span class="spinner"></span>';
+  try {
+    const res = await fetch('/api/patterns');
+    const data = await res.json();
+    await loadFavorites();
+    currentPatterns = data.patterns;
+    renderPatterns(data.patterns);
+    loadSummariesForAll(data.patterns);
+  } catch(e) {
+    document.getElementById('pattern-list').innerHTML =
+      '<div style="padding:16px;color:var(--red);font-size:13px;">Failed to load patterns: ' + e.message + '</div>';
+  }
+  btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>`;
+}
+
+let currentPatterns = [];
+
+async function loadSummariesForAll(patterns) {
+  const allLoaded = patterns.every(p => patternDetails[p]?.summary !== undefined);
+  if (allLoaded) return;
+  const batchSize = 10;
+  for (let i = 0; i < patterns.length; i += batchSize) {
+    const batch = patterns.slice(i, i + batchSize);
+    await Promise.all(batch.map(async (name) => {
+      if (patternDetails[name]?.summary !== undefined) return;
+      try {
+        const res = await fetch('/api/patterns/' + encodeURIComponent(name) + '/summary');
+        const data = await res.json();
+        patternDetails[name] = patternDetails[name] || {};
+        patternDetails[name].summary = data.summary;
+      } catch(e) {}
+    }));
+    renderPatterns(currentPatterns);
+  }
+}
+
+function renderPatterns(patterns) {
+  const container = document.getElementById('pattern-list');
+  container.innerHTML = '';
+
+  let filtered = patterns;
+  const query = document.getElementById('pattern-search').value.toLowerCase();
+
+  if (currentView === 'favorites') {
+    filtered = filtered.filter(p => favorites.includes(p));
+  }
+
+  if (query) {
+    filtered = filtered.filter(p => p.toLowerCase().includes(query));
+  }
+
+  if (filtered.length === 0) {
+    container.innerHTML = '<div style="padding:16px; color:var(--text2); font-size:13px;">No patterns found</div>';
+    document.getElementById('pattern-count').textContent = currentView === 'favorites' ? favorites.length + ' favorites' : '0 patterns';
+    return;
+  }
+
+  document.getElementById('pattern-count').textContent =
+    (currentView === 'favorites' ? favorites.length : patterns.length) + (currentView === 'favorites' ? ' favorites' : ' patterns');
+
+  const starFilled = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+  const starEmpty = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+
+  filtered.forEach(name => {
+    const div = document.createElement('div');
+    div.className = 'pattern-item';
+    div.dataset.name = name;
+    const isFav = favorites.includes(name);
+    const summary = patternDetails[name]?.summary || '';
+    div.innerHTML = `<div class="pattern-item-text">
+        <div class="pattern-name">${escapeHtml(name)}</div>
+        ${summary ? '<div class="pattern-desc">' + escapeHtml(summary) + '</div>' : '<div class="pattern-desc" style="font-style:italic;">loading...</div>'}
+      </div>
+      <span class="pattern-item-fav ${isFav ? 'favorited' : ''}" data-name="${escapeHtml(name)}" onclick="event.stopPropagation(); toggleFavorite('${escapeHtml(name)}', this)">
+        ${isFav ? starFilled : starEmpty}
+      </span>`;
+    div.addEventListener('click', () => selectPattern(name, div));
+    container.appendChild(div);
+  });
+}
+
+function filterPatterns(query) {
+  renderPatterns(currentPatterns);
+}
+
+async function selectPattern(name, el) {
+  document.querySelectorAll('.pattern-item').forEach(e => e.classList.remove('active'));
+  el.classList.add('active');
+  selectedPattern = name;
+
+  try {
+    const res = await fetch('/api/patterns/' + encodeURIComponent(name) + '/info');
+    const data = await res.json();
+    patternDetails[name] = data;
+
+    const varContainer = document.getElementById('var-container');
+    varContainer.innerHTML = '';
+    if (data.variables && data.variables.length > 0) {
+      data.variables.forEach(v => {
+        varContainer.innerHTML += `<div class="var-row">
+          <input type="text" id="var-${v}" placeholder="#${v}">
+        </div>`;
+      });
+    } else {
+      varContainer.innerHTML = '<div style="font-size:12px;color:var(--text2);">No variables</div>';
+    }
+  } catch(e) {
+    console.warn('Could not load pattern info for', name, e);
+  }
+}
+
+async function loadSelects() {
+  try {
+    const models = await (await fetch('/api/models')).json();
+    const modelSel = document.getElementById('model-select');
+    modelSel.innerHTML = '<option value="">Auto</option>';
+    models.models.forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m;
+      opt.textContent = m;
+      modelSel.appendChild(opt);
+    });
+  } catch(e) {}
+
+  try {
+    const ctx = await (await fetch('/api/contexts')).json();
+    const ctxSel = document.getElementById('context-select');
+    ctxSel.innerHTML = '<option value="">None</option>';
+    ctx.contexts.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c;
+      opt.textContent = c;
+      ctxSel.appendChild(opt);
+    });
+  } catch(e) {}
+}
+
+// Favorites
+async function loadFavorites() {
+  try {
+    const res = await fetch('/api/favorites');
+    favorites = await res.json();
+    favorites = favorites.favorites || [];
+  } catch(e) {
+    favorites = [];
+  }
+  renderPresets();
+}
+
+const starFilledSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+const starEmptySvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>';
+const xSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+
+async function toggleFavorite(name, el) {
+  const idx = favorites.indexOf(name);
+  if (idx >= 0) {
+    favorites.splice(idx, 1);
+    el.classList.remove('favorited');
+    el.innerHTML = starEmptySvg;
+  } else {
+    favorites.push(name);
+    el.classList.add('favorited');
+    el.innerHTML = starFilledSvg;
+  }
+  try {
+    await fetch('/api/favorites', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({favorites})
+    });
+  } catch(e) {}
+  if (currentView === 'favorites') {
+    renderPatterns(currentPatterns);
+  }
+}
+
+// Presets
+async function loadPresets() {
+  try {
+    const res = await fetch('/api/presets');
+    presets = await res.json();
+    presets = presets.presets || [];
+  } catch(e) {
+    presets = [];
+  }
+  renderPresets();
+}
+
+function renderPresets() {
+  const container = document.getElementById('preset-list');
+  const section = document.getElementById('presets-section');
+  if (presets.length === 0) {
+    section.style.display = currentView === 'all' ? 'block' : 'none';
+    container.innerHTML = '<div style="font-size:11px;color:var(--text2);padding:4px 0;">No presets yet</div>';
+    return;
+  }
+  section.style.display = 'block';
+  container.innerHTML = '';
+  presets.forEach(p => {
+    const div = document.createElement('div');
+    div.className = 'preset-item';
+    div.innerHTML = `<span class="preset-item-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</span>
+      <span class="preset-item-pattern">${escapeHtml(p.pattern || '')}</span>
+      <button class="preset-delete" data-id="${p.id}" title="Delete">${xSvg}</button>`;
+    div.querySelector('.preset-item-name').addEventListener('click', () => applyPreset(p));
+    div.querySelector('.preset-delete').addEventListener('click', (e) => {
+      e.stopPropagation();
+      deletePreset(p.id);
+    });
+    container.appendChild(div);
+  });
+}
+
+function applyPreset(preset) {
+  pendingPresetSettings = preset;
+
+  const modelSel = document.getElementById('model-select');
+  for (let opt of modelSel.options) {
+    if (opt.value === preset.model) { opt.selected = true; break; }
+  }
+
+  const ctxSel = document.getElementById('context-select');
+  for (let opt of ctxSel.options) {
+    if (opt.value === preset.context) { opt.selected = true; break; }
+  }
+
+  document.getElementById('opt-temp').value = preset.temperature ?? 0.7;
+  document.getElementById('opt-topp').value = preset.topp ?? 0.9;
+  document.getElementById('opt-stream').checked = !!preset.stream;
+  document.getElementById('opt-raw').checked = !!preset.raw;
+  document.getElementById('opt-dry-run').checked = !!preset.dry_run;
+  document.getElementById('language-input').value = preset.language || '';
+
+  if (preset.pattern) {
+    const items = document.querySelectorAll('.pattern-item');
+    items.forEach(item => {
+      if (item.dataset.name === preset.pattern) {
+        selectPattern(preset.pattern, item);
+      }
+    });
+  }
+
+  document.getElementById('preset-load-bar').style.display = 'flex';
+}
+
+function loadPresetSettings() {
+  if (pendingPresetSettings) {
+    runPattern();
+  }
+}
+
+function clearPresetBanner() {
+  pendingPresetSettings = null;
+  document.getElementById('preset-load-bar').style.display = 'none';
+}
+
+async function deletePreset(id) {
+  if (!confirm('Delete this preset?')) return;
+  try {
+    const res = await fetch('/api/presets/' + encodeURIComponent(id), {method: 'DELETE'});
+    const data = await res.json();
+    presets = data.presets || [];
+    renderPresets();
+  } catch(e) {}
+}
+
+function showSavePresetModal() {
+  presetToEdit = null;
+  document.getElementById('preset-name').value = '';
+  document.getElementById('preset-pattern').value = selectedPattern || '';
+  document.getElementById('preset-model').value = document.getElementById('model-select').value;
+  document.getElementById('preset-temp').value = document.getElementById('opt-temp').value;
+  document.getElementById('preset-topp').value = document.getElementById('opt-topp').value;
+  document.getElementById('preset-context').value = document.getElementById('context-select').value;
+  document.getElementById('preset-language').value = document.getElementById('language-input').value;
+  document.getElementById('modal-save-preset').classList.add('show');
+}
+
+async function savePreset() {
+  const name = document.getElementById('preset-name').value.trim() || 'Untitled Preset';
+  const preset = {
+    id: 'preset_' + Date.now(),
+    name: name,
+    pattern: document.getElementById('preset-pattern').value.trim(),
+    model: document.getElementById('preset-model').value.trim(),
+    context: document.getElementById('preset-context').value.trim(),
+    temperature: parseFloat(document.getElementById('preset-temp').value) || 0.7,
+    topp: parseFloat(document.getElementById('preset-topp').value) || 0.9,
+    presence_penalty: 0.0,
+    frequency_penalty: 0.0,
+    stream: document.getElementById('opt-stream').checked,
+    raw: document.getElementById('opt-raw').checked,
+    dry_run: document.getElementById('opt-dry-run').checked,
+    language: document.getElementById('preset-language').value.trim(),
+    created_at: timeFormat(),
+  };
+
+  try {
+    const res = await fetch('/api/presets', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(preset),
+    });
+    const data = await res.json();
+    presets = data.presets || [];
+    renderPresets();
+    closeModal('modal-save-preset');
+    setStatus('Preset saved: ' + name, '');
+  } catch(e) {
+    setStatus('Failed to save preset: ' + e.message, 'error');
+  }
+}
+
+function timeFormat() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0') + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0');
+}
+
+async function runPattern() {
+  if (!selectedPattern) {
+    setStatus('Please select a pattern first', '');
+    return;
+  }
+
+  const runBtn = document.getElementById('run-btn');
+  runBtn.disabled = true;
+  runBtn.innerHTML = '<span class="spinner"></span> Running...';
+  setStatus('Running pattern...', '');
+
+  let inputText = '';
+  let scrapeUrl = null;
+  let youtubeUrl = null;
+  const activeTab = document.querySelector('.input-tab.active').dataset.tab;
+
+  if (activeTab === 'text') {
+    inputText = document.getElementById('input-text').value.trim();
+  } else if (activeTab === 'file') {
+    const fp = document.getElementById('input-file').value.trim();
+    if (fp) {
+      try {
+        const res = await fetch('/api/read-file', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({path: fp})
+        });
+        const data = await res.json();
+        inputText = data.content || '';
+      } catch(e) {
+        setStatus('Failed to read file: ' + e.message, '');
+        runBtn.disabled = false;
+        runBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run Pattern`;
+        return;
+      }
+    }
+  } else if (activeTab === 'url') {
+    scrapeUrl = document.getElementById('input-url').value.trim();
+  } else if (activeTab === 'youtube') {
+    youtubeUrl = document.getElementById('input-youtube').value.trim();
+  }
+
+  const variables = {};
+  document.querySelectorAll('#var-container input').forEach(inp => {
+    if (inp.value.trim()) {
+      variables[inp.id.replace('var-', '')] = inp.value.trim();
+    }
+  });
+
+  const payload = {
+    pattern: selectedPattern,
+    input: inputText,
+    variables: variables,
+    model: document.getElementById('model-select').value,
+    context: document.getElementById('context-select').value,
+    temperature: parseFloat(document.getElementById('opt-temp').value),
+    topp: parseFloat(document.getElementById('opt-topp').value),
+    stream: document.getElementById('opt-stream').checked,
+    raw: document.getElementById('opt-raw').checked,
+    dry_run: document.getElementById('opt-dry-run').checked,
+    scrape_url: scrapeUrl,
+    youtube: youtubeUrl,
+    language: document.getElementById('language-input').value.trim() || null,
+  };
+
+  Object.keys(payload).forEach(k => { if (payload[k] === null) delete payload[k]; });
+
+  try {
+    const res = await fetch('/api/run', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+
+    if (data.stderr && !data.stdout) {
+      document.getElementById('output-area').innerHTML =
+        '<pre style="color:var(--red);">' + escapeHtml(data.stderr) + '</pre>';
+      setStatus('Error (exit ' + data.returncode + ')', 'stderr');
+    } else {
+      currentOutput = data.stdout;
+      document.getElementById('output-area').innerHTML = '<pre>' + escapeHtml(data.stdout) + '</pre>';
+      setStatus('Complete (exit ' + data.returncode + ')', '');
+      if (data.returncode !== 0) {
+        document.getElementById('error-text').textContent = 'Exit code: ' + data.returncode;
+      }
+    }
+  } catch(e) {
+    document.getElementById('output-area').innerHTML =
+      '<pre style="color:var(--red);">Failed: ' + escapeHtml(e.message) + '</pre>';
+    setStatus('Request failed', 'error');
+  }
+
+  runBtn.disabled = false;
+  runBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="5 3 19 12 5 21 5 3"/></svg> Run Pattern`;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&').replace(/</g,'<').replace(/>/g,'>').replace(/"/g,'"');
+}
+
+function setStatus(text, type) {
+  document.getElementById('status-text').textContent = text;
+  if (type === 'stderr' || type === 'error') {
+    document.getElementById('error-text').textContent = text;
+  } else {
+    document.getElementById('error-text').textContent = '';
+  }
+}
+
+// Save functions
+function getOutputContent() {
+  const pre = document.querySelector('#output-area pre');
+  return pre ? pre.textContent : '';
+}
+
+function getActiveInputSource() {
+  const tab = document.querySelector('.input-tab.active').dataset.tab;
+  if (tab === 'text') return document.getElementById('input-text').value.trim().substring(0, 80) || '(text input)';
+  if (tab === 'file') return document.getElementById('input-file').value.trim() || '(file)';
+  if (tab === 'url') return document.getElementById('input-url').value.trim() || '(url)';
+  if (tab === 'youtube') return document.getElementById('input-youtube').value.trim() || '(youtube)';
+  return '(input)';
+}
+
+function copyOutput() {
+  const content = getOutputContent();
+  if (!content) return;
+  navigator.clipboard.writeText(content);
+  setStatus('Copied to clipboard!', '');
+}
+
+function showSaveFileModal() {
+  const content = getOutputContent();
+  if (!content) { setStatus('No output to save', ''); return; }
+  document.getElementById('save-file-dir').value = '';
+  document.getElementById('save-file-name').value = selectedPattern ? selectedPattern + '-output.md' : 'output.md';
+  document.getElementById('modal-save-file').classList.add('show');
+}
+
+async function saveToFile() {
+  const content = getOutputContent();
+  const dir = document.getElementById('save-file-dir').value.trim();
+  const name = document.getElementById('save-file-name').value.trim() || 'output.md';
+  const filepath = (dir ? dir + '/' : '') + name;
+  if (!filepath) return;
+
+  try {
+    const res = await fetch('/api/save-file', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({content, filepath})
+    });
+    const data = await res.json();
+    if (data.success) {
+      setStatus('Saved to ' + data.path, '');
+      closeModal('modal-save-file');
+    } else {
+      setStatus('Save failed: ' + (data.error || 'unknown'), 'error');
+    }
+  } catch(e) {
+    setStatus('Save failed: ' + e.message, 'error');
+  }
+}
+
+function showSaveObsidianModal() {
+  const content = getOutputContent();
+  if (!content) { setStatus('No output to save', ''); return; }
+  const title = selectedPattern ? selectedPattern.replace(/_/g, ' ') : 'Note';
+  document.getElementById('obsidian-title').value = title;
+
+  fetch('/api/obsidian-config')
+    .then(r => r.json())
+    .then(cfg => {
+      if (cfg.vault_path) document.getElementById('obsidian-vault').value = cfg.vault_path;
+      if (cfg.folder) document.getElementById('obsidian-folder').value = cfg.folder;
+    })
+    .catch(() => {});
+
+  document.getElementById('modal-save-obsidian').classList.add('show');
+}
+
+async function saveToObsidian() {
+  const content = getOutputContent();
+  const title = document.getElementById('obsidian-title').value.trim() || 'Untitled';
+  const vault = document.getElementById('obsidian-vault').value.trim();
+  const folder = document.getElementById('obsidian-folder').value.trim();
+
+  if (!content) return;
+
+  try {
+    const res = await fetch('/api/save-obsidian', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        content, title, vault_path: vault,
+        folder, pattern: selectedPattern,
+        source: getActiveInputSource()
+      })
+    });
+    const data = await res.json();
+    if (data.success) {
+      await fetch('/api/obsidian-config', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({vault_path: vault, folder})
+      }).catch(() => {});
+      setStatus('Saved to Obsidian: ' + data.path, '');
+      closeModal('modal-save-obsidian');
+    } else {
+      setStatus('Save failed: ' + (data.error || 'unknown'), 'error');
+    }
+  } catch(e) {
+    setStatus('Save failed: ' + e.message, 'error');
+  }
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.classList.remove('show');
+  });
+});
+
+// Init
+loadPatterns();
+loadSelects();
+loadPresets();
+setView('all');
+</script>
+</body>
+</html>

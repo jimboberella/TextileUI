@@ -1,0 +1,14 @@
+{
+  "default_output_dir": "~/Documents/fabric-output",
+  "obsidian_vault_path": "~/Documents/Notes/James Notes",
+  "default_model": null,
+  "default_temperature": 0.7,
+  "default_topp": 0.9,
+  "default_presence_penalty": 0.0,
+  "default_frequency_penalty": 0.0,
+  "favorites": [
+    "critique_and_socialize",
+    "write_micro_essay"
+  ],
+  "last_obsidian_folder": "PostIdeas"
+}
